@@ -6,7 +6,6 @@ import nilearn.datasets as ds
 from nilearn.image import resample_img
 from nilearn.input_data import NiftiLabelsMasker
 from sklearn.preprocessing import StandardScaler
-from sklearn.decomposition import PCA
 from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import StratifiedShuffleSplit
 from scipy import stats
@@ -86,9 +85,9 @@ X_brain = FS_ss
 # extraction confound information
 confounds = [
 	"Biological Sex",
-    "Age",
-    "EducationalLevel",
-    "Handedness"
+	"Age",
+	"EducationalLevel",
+	"Handedness"
     	     ]
 my_confound = df[confounds].values
 
@@ -227,7 +226,7 @@ pvals = np.array(pvals)
 print('{} ROIs are significant at p<0.05'.format(np.sum(pvals > 0)))
 
 
-# get significant ROI name + significant wieghts
+# get significant ROI name + significant weights
 significant_weights = []
 dic = {}
 for i, roi in enumerate(atlas.labels):
