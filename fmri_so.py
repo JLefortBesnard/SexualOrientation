@@ -15,7 +15,7 @@ for i_nii, nii_path in enumerate(df.fMRI_path.values):
 	# shape (121, 100)
   	
 	# substract neighbor in time 
-  	cur_FS = subtract(FS) 
+  	cur_FS = subtract(cur_FS) 
 	# shape (120, 100)
   	
 	# compute cross correlation
@@ -27,7 +27,7 @@ for i_nii, nii_path in enumerate(df.fMRI_path.values):
 	# shape (100, 99)
 
   	# save results for each subject
-  	FS.append(sub_results_per_ROI) 
+  	FS.append(sub_cross_corr_per_ROI) 
 
 FS = np.array(FS).squeeze() 
 # shape (86, 100, 99)
