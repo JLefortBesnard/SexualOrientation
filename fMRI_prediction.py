@@ -39,7 +39,7 @@ Y[Y == 2] = 0
 Y = Y.values # df to array
 
 
-# add path to structural imgs in df
+# add path to functional imgs in df
 df["fMRI_path"] = ['Function/filtered_func_data_warped_{}.nii.gz'.format(i) for i in df.index]
 
 
@@ -69,10 +69,10 @@ def extract_ROIconn(matrix):
 
 # function to substract TS of t + 1
 def subtract(TS):
-	TS_ = np.zeros((121, 6)) # last columns has no t+1
+	TS_ = np.zeros((121, 6)) 
 	for i in range(121):
 		if i == 120:
-			TS_[i] = TS[i]
+			TS_[i] = TS[i] # last columns has no t+1 so same ts
 		else:
 			TS_[i] = TS[i+1] - TS[i] # transpose because substract column wise
 	return TS_
@@ -96,8 +96,8 @@ for MP in MP_paths:
 				ind += 1
 	df_mp1.to_excel("MP/first/{}.xlsx".format(MP[3:-4]))
 
-print("Computing proprocess of motion parameter")
-
+	
+print("Computing substracting and squaring of motion parameter")
 MP_paths = glob.glob('MP/first/*.xlsx')
 for MP in MP_paths:
 	df_mp1 = pd.read_excel(MP)
@@ -106,9 +106,10 @@ for MP in MP_paths:
 	# substract neighbor in time 
 	cur_FS = subtract(TS)
 	# shape (121, 6)
+	# add results to df
 	for i in range(6):
 		df_mp1[i+7] = cur_FS.T[i]
-	# shape (120, 12) pour le df
+	# shape (120, 12) 
 	data = df_mp1[df_mp1.columns[1:]].values**2
 	df_mp1 = pd.DataFrame(columns=np.arange(12), 
 					data=data)
@@ -150,6 +151,7 @@ for i_nii, nii_path in enumerate(df.fMRI_path.values):
 	# upload df with motion parameter values
 	confounds = pd.read_excel('MP/second/prefiltered_func_data_mcf_{}.xlsx'.format(i_nii+1))
 	confounds = confounds[confounds.columns[1:]].values
+	# deconfounding
 	cur_FS = clean(signals=cur_FS, confounds=confounds, detrend=False, standardize=True)
 	# shape (121, 100)
 	# compute cross correlation
@@ -165,7 +167,7 @@ np.save("Data_ready", FS)
 # shape (86, 100, 99)
 
 FS = np.load("Data_ready.npy")
-FS = FS.reshape((100,86,99)) 
+FS = FS.reshape((100,86,99)) # for the analysis each ROI at a turn
 #########################################
 ### ACTUAL MODELING + DECONFOUNDING #####
 #########################################
@@ -177,14 +179,6 @@ do same cross validation cycles as in sMRI (but only with information related to
 then get the .predict_probaba() across all CV folds and average that, keep that averaged 0...1 continuous number of THAT region
 repeat that last for all regions, then paste the average continuous predictions for each region into a nifti, 
 we will take a look (once this looks good, we go from there)
-
-I will run the log reg with input.shape = [nb of subject, 99 correlations] 
-# which I will do for each ROI (100 in total)
-# if I run clf.predict_proba(X_test, Y_test), I will end up with
-# a results of shape [89, 2] and not [89, 1]
-(2 because a number for homo and another for hetero)
-
-paste the average continuous predictions for each region into a nifti
 '''
 
 
@@ -199,7 +193,7 @@ pop_accs = []
 pop_proba = []
 for ROI in range(100):
 	print("*******")
-	print(ROi, "/100")
+	print(ROI, "/100")
 	X = FS[ROI]
 	sample_accs = []
 	sample_proba = []
