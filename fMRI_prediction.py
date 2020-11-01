@@ -1,6 +1,5 @@
 import glob
 import numpy as np
-from nilearn.input_data import NiftiMasker
 from nilearn.input_data import NiftiLabelsMasker
 from nilearn.image import resample_img
 from nilearn import image
@@ -17,7 +16,6 @@ from matplotlib import pylab as plt
 
 
 print("Extracting demographic data")
-
 np.random.seed(0)
 
 ######################################
@@ -29,7 +27,6 @@ df = pd.read_excel("DATA_IZKF_Version.xlsx")
 df = df.set_index('No.')
 # drop index 87 as we don't have MRI data
 df = df.drop([87])
-
 # Outcome= sexual orientation.
 # Group:  1 hetero, 2 homo
 Y = df["Group"]
@@ -37,15 +34,13 @@ Y = df["Group"]
 Y[Y == 2] = 0 
 # 41 homo, 45 hetero in total
 Y = Y.values # df to array
-
-
 # add path to functional imgs in df
 df["fMRI_path"] = ['Function/filtered_func_data_warped_{}.nii.gz'.format(i) for i in df.index]
 
 
-
-
-
+################################
+##### Functions needed later ###
+################################
 
 # function to extract correlation matrix results per ROI
 # return the values per ROI (must be squared matrix)
@@ -78,6 +73,11 @@ def subtract(TS):
 	return TS_
 
 
+
+################################################
+##### Preparing confounds (motion parameter) ###
+################################################
+
 print("Extracting motion parameter data")
 # Extract motion parameters from .PAR 
 # save it as .xlsx doc
@@ -98,6 +98,7 @@ for MP in MP_paths:
 
 	
 print("Computing substracting and squaring of motion parameter")
+# add 6  columns for subtract at t+1 and add 12 columns for squared values
 MP_paths = glob.glob('MP/first/*.xlsx')
 for MP in MP_paths:
 	df_mp1 = pd.read_excel(MP)
@@ -121,12 +122,11 @@ for MP in MP_paths:
 	df_mp1.to_excel("MP/second/{}.xlsx".format(MP[9:-5]))
 
 
-datum.shape
-print("Masking")
 ###########################
 ### Preparing masking #####
 ###########################
 
+print("Masking")
 # define masker
 atlas = ds.fetch_atlas_schaefer_2018(n_rois=100, yeo_networks=7, resolution_mm=2, data_dir=None, base_url=None, resume=True, verbose=1)
 first_nii = nib.load(df.fMRI_path.values[0])
@@ -137,6 +137,7 @@ masker.fit()
 
 
 print("Starting the ROI time series extraction")
+
 ###################################
 ### Preprocessing per subject #####
 ###################################
@@ -182,25 +183,9 @@ np.save("Data_ready", FS)
 
 FS = np.load("Data_ready.npy")
 
-#########################################
-### ACTUAL MODELING + DECONFOUNDING #####
-#########################################
-'''
-same classifier (LogReg)
-BUT going to each row (=a source brain region with its connections to all other regions) 
-build a feature matrix only with information from that region for all subjects
-do same cross validation cycles as in sMRI (but only with information related to THAT source region)
-then get the .predict_probaba() across all CV folds and average that, keep that averaged 0...1 continuous number of THAT region
-repeat that last for all regions, then paste the average continuous predictions for each region into a nifti, 
-we will take a look (once this looks good, we go from there)
-'''
-
-
-
-#######################################################
-##### EXTRACTING FUNCTIONAL BRAIN DATA PER SUBJECT ####
-#######################################################
-
+##########################
+### ACTUAL MODELING  #####
+##########################
 
 # loop to extract ROI 1 results for each patients
 pop_accs = []
@@ -233,7 +218,8 @@ pop_proba = np.array(pop_proba)
 pop_proba_hetero = pop_proba[:, 1] 
 pop_accs = np.array(pop_accs)
 
-pop_proba_hetero = np.array([pop_proba_hetero]*121)
-pop_accs = np.array([pop_accs]*121)
-proba_nii = masker.inverse_transform(pop_proba_hetero).to_filename("proba.nii")
-accs_nii = masker.inverse_transform(pop_accs).to_filename("accs.nii")
+pop_proba_hetero = np.array([pop_proba_hetero]*121) # set as fake 4D for nii transform
+pop_accs = np.array([pop_accs]*121) # set as fake 4D for nii transform
+
+proba_nii = masker.inverse_transform(pop_proba_hetero).to_filename("proba.nii") # transform as nii and save
+accs_nii = masker.inverse_transform(pop_accs).to_filename("accs.nii") # transform as nii and save
