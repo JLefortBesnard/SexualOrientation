@@ -74,9 +74,9 @@ def subtract(TS):
 
 
 
-################################################
-##### Preparing confounds (motion parameter) ###
-################################################
+###########################################################
+##### Preparing confounds (motion parameter) 1:openfile ###
+###########################################################
 
 print("Extracting motion parameter data")
 # Extract motion parameters from .PAR 
@@ -96,6 +96,12 @@ for MP in MP_paths:
 				ind += 1
 	df_mp1.to_excel("MP/first/{}.xlsx".format(MP[3:-4]))
 
+
+
+##############################################################################
+##### Preparing confounds (motion parameter) 2:compute subtract and square ###
+##############################################################################
+	
 	
 print("Computing substracting and squaring of motion parameter")
 # add 6  columns for subtract at t+1 and add 12 columns for squared values
