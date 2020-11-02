@@ -14,14 +14,14 @@ from scipy import stats
 from matplotlib import pylab as plt
 
 
-
-print("Extracting demographic data")
 np.random.seed(0)
 
 ######################################
 ##### EXTRACTING DEMOGRAPHIC DATA ####
 ######################################
 
+
+print("Extracting demographic data")
 # read excel doc as df
 df = pd.read_excel("DATA_IZKF_Version.xlsx")
 df = df.set_index('No.')
@@ -116,7 +116,7 @@ for MP in MP_paths:
 	# add results to df
 	for i in range(6):
 		df_mp1[i+7] = cur_FS.T[i]
-	# shape (120, 12) 
+	# df shape (120, 12) 
 	data = df_mp1[df_mp1.columns[1:]].values
 	# shape (120, 12) 
 	data_squared = df_mp1[df_mp1.columns[1:]].values**2
@@ -125,6 +125,7 @@ for MP in MP_paths:
 	# shape (120, 24) 
 	df_mp1 = pd.DataFrame(columns=np.arange(24), 
 					data=datum)
+	# df shape (120, 24) 
 	df_mp1.to_excel("MP/second/{}.xlsx".format(MP[9:-5]))
 
 
@@ -138,16 +139,17 @@ atlas = ds.fetch_atlas_schaefer_2018(n_rois=100, yeo_networks=7, resolution_mm=2
 first_nii = nib.load(df.fMRI_path.values[0])
 cur_ratlas_nii = resample_img(
     	atlas.maps, target_affine=first_nii.affine, interpolation='nearest')
-masker = NiftiLabelsMasker(labels_img=cur_ratlas_nii, standardize=False)
+masker = NiftiLabelsMasker(labels_img=cur_ratlas_nii, standardize=False) # standardization done later in the loop
 masker.fit()
 
 
-print("Starting the ROI time series extraction")
+
 
 ###################################
 ### Preprocessing per subject #####
 ###################################
 
+print("Starting the ROI time series extraction")
 # extract TS per ROI, preprocess and compute correlation matrix
 # loop through 86 subjects
 # extract TS per ROI, preprocess and compute correlation matrix
@@ -175,7 +177,7 @@ for i_nii, nii_path in enumerate(df.fMRI_path.values):
 	# shape (100, 99) # save results for each subject
 	FS.append(sub_cross_corr_per_ROI)
 FS = np.array(FS)
-FS = np.nan_to_num(FS) # 2 subjects with nan (3 and 4, both hetero)
+FS = np.nan_to_num(FS) # 2 subjects with a few nan (3 and 4, both hetero)
 FS = FS.reshape((100,86,99)) # for the analysis each ROI at a turn
 np.save("Data_ready", FS)
   
