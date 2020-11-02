@@ -187,6 +187,7 @@ pop_proba = []
 for ROI in range(100):
 	print("*******")
 	print(ROI, "/100")
+	print("*******")
 	X = FS[ROI]
 	sample_accs = []
 	sample_proba = []
@@ -203,7 +204,7 @@ for ROI in range(100):
 		y_pred = clf.predict(X_test)
 		acc = (y_pred == y_test).mean()
 		sample_accs.append(acc)
-		sample_proba.append(np.mean(proba, axis=0))
+		sample_proba.append(proba)
 	pop_proba.append(np.mean(sample_proba, axis=0))
 	pop_accs.append(np.mean(sample_accs))
 
