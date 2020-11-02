@@ -160,14 +160,9 @@ for i_nii, nii_path in enumerate(df.fMRI_path.values):
 	confounds = confounds[confounds.columns[1:]].values
 	# deconfounding
 	cur_FS = clean(signals=cur_FS, confounds=confounds, detrend=False)
-	print("check cleaning:")
-	print(cur_FS[0, :2])
-
 	# shape (121, 100)
 	# compute cross correlation
 	sub_cross_corr = np.corrcoef(cur_FS.T)
-	print("check cross corr:")
-	print(sub_cross_corr[1][:3])
 	# shape (100, 100)
   	# extract results per ROI
 	sub_cross_corr_per_ROI = extract_ROIconn(sub_cross_corr)
