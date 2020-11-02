@@ -9,7 +9,7 @@ import pandas as pd
 from sklearn.preprocessing import StandardScaler
 from nilearn.signal import clean
 from sklearn.linear_model import LogisticRegression
-from sklearn.model_selection import StratifiedShuffleSplit
+from sklearn.model_selection import KFold
 from scipy import stats
 from matplotlib import pylab as plt
 
@@ -200,9 +200,9 @@ for ROI in range(100):
 	# starting the modelisation
 	#run the CV 5 fold logistic regression as many times as we got brain regions
 	clf = LogisticRegression()
-	sss = StratifiedShuffleSplit(n_splits=5, test_size=0.1, random_state=i_subsample)
-	sss.get_n_splits(X, Y)
-	for train_index, test_index in sss.split(X, Y):
+	kf = KFold(n_splits=5, random_state=i_subsample)
+	kf.get_n_splits(X)
+	for train_index, test_index in kf.split(X):
 		X_train, X_test = X[train_index], X[test_index]
 		y_train, y_test = Y[train_index], Y[test_index]
 		clf.fit(X_train, y_train)
@@ -210,7 +210,7 @@ for ROI in range(100):
 		y_pred = clf.predict(X_test)
 		acc = (y_pred == y_test).mean()
 		sample_accs.append(acc)
-		sample_proba.append(proba)
+		sample_proba.append(np.mean(proba, axis=0))
 	pop_proba.append(np.mean(sample_proba, axis=0))
 	pop_accs.append(np.mean(sample_accs))
 
