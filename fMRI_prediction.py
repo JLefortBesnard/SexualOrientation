@@ -198,19 +198,18 @@ for ROI in range(100):
 	sample_proba = []
 	# starting the modelisation
 	#run the CV 5 fold logistic regression as many times as we got brain regions
-	for i_subsample in range(100):
-		clf = LogisticRegression()
-		sss = StratifiedShuffleSplit(n_splits=5, test_size=0.1, random_state=i_subsample)
-		sss.get_n_splits(X, Y)
-		for train_index, test_index in sss.split(X, Y):
-			X_train, X_test = X[train_index], X[test_index]
-			y_train, y_test = Y[train_index], Y[test_index]
-			clf.fit(X_train, y_train)
-			proba = clf.predict_proba(X_test)
-			y_pred = clf.predict(X_test)
-			acc = (y_pred == y_test).mean()
-			sample_accs.append(acc)
-			sample_proba.append(np.mean(proba, axis=0))
+	clf = LogisticRegression()
+	sss = StratifiedShuffleSplit(n_splits=5, test_size=0.1, random_state=i_subsample)
+	sss.get_n_splits(X, Y)
+	for train_index, test_index in sss.split(X, Y):
+		X_train, X_test = X[train_index], X[test_index]
+		y_train, y_test = Y[train_index], Y[test_index]
+		clf.fit(X_train, y_train)
+		proba = clf.predict_proba(X_test)
+		y_pred = clf.predict(X_test)
+		acc = (y_pred == y_test).mean()
+		sample_accs.append(acc)
+		sample_proba.append(np.mean(proba, axis=0))
 	pop_proba.append(np.mean(sample_proba, axis=0))
 	pop_accs.append(np.mean(sample_accs))
 
