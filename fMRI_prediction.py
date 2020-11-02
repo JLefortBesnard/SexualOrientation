@@ -132,7 +132,7 @@ atlas = ds.fetch_atlas_schaefer_2018(n_rois=100, yeo_networks=7, resolution_mm=2
 first_nii = nib.load(df.fMRI_path.values[0])
 cur_ratlas_nii = resample_img(
     	atlas.maps, target_affine=first_nii.affine, interpolation='nearest')
-masker = NiftiLabelsMasker(labels_img=cur_ratlas_nii, standardize=True)
+masker = NiftiLabelsMasker(labels_img=cur_ratlas_nii, standardize=False)
 masker.fit()
 
 
@@ -152,8 +152,7 @@ for i_nii, nii_path in enumerate(df.fMRI_path.values):
 	print("Currently doing sub", i_nii + 1, "/86")
 	# EXTRACT TIME SERIES PER roi
 	cur_FS = masker.transform(nii_path)
-	print("check standardizing:")
-	print(cur_FS[0, :2])
+	cur_FS = StandardScaler().fit_transform(cur_FS)
 	# shape (121, 100)
 	# deconfounding
 	# upload df with motion parameter values
@@ -175,7 +174,7 @@ for i_nii, nii_path in enumerate(df.fMRI_path.values):
 	# shape (100, 99) # save results for each subject
 	FS.append(sub_cross_corr_per_ROI)
 FS = np.array(FS)
-FS = np.nan_to_num(FS)
+FS = np.nan_to_num(FS) # 2 subjects with nan (3 and 4, both hetero)
 FS = FS.reshape((100,86,99)) # for the analysis each ROI at a turn
 np.save("Data_ready", FS)
   
