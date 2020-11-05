@@ -281,9 +281,9 @@ print("acc mean = {}, std = {}".format(mean_stalking, std_stalking))
 for ind, coef in enumerate(clf.coef_[0]):
 	if coef > 0.6:
 		print("*****")
-		print("The ROI: ", atlas.labels[ind])
-		print("obtained an accuracy of ", roi_pred_accs[ind])
-		print("and a weight of ", coef)
+		print("ROI name: ", atlas.labels[ind])
+		print("acc: ", roi_pred_accs[ind], " weight: ", coef)
+		
 		print("poba obtained and real output:")
 		print(probas_staking[ind][40:50])
 		print(Y[40:50])
@@ -300,7 +300,6 @@ for i in range(100):
 	for train_index, test_index in kf.split(X):
 		X_train, X_test = X[train_index], X[test_index]
 		y_train, y_test = Y_perm[train_index], Y_perm[test_index]
-
 		clf.fit(X_train, y_train)
 		y_pred = clf.predict(X_test)
 		print(y_train, y_test, y_pred)
