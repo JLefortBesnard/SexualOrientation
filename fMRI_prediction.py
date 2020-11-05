@@ -185,9 +185,9 @@ np.save("Data_ready", FS)
 
 FS = np.load("Data_ready.npy")
 
-##########################
-### ACTUAL MODELING  #####
-##########################
+############################
+### ROI WISE MODELING  #####
+############################
 
 # loop to extract ROI 1 results for all patients
 roi_pred_accs = []
@@ -242,8 +242,18 @@ roi_pred_proba_hetero = roi_pred_proba[:, 1]
 roi_pred_accs = np.array(roi_pred_accs)
 roi_pred_std = np.array(roi_pred_std)
 
+# niftiing the results
+pop_proba_hetero = np.array([roi_pred_proba_hetero]*121) # set as fake 4D for nii transform
+pop_accs = np.array([roi_pred_accs]*121) # set as fake 4D for nii transform
+proba_nii = masker.inverse_transform(pop_proba_hetero).to_filename("proba.nii") # transform as nii and save
+accs_nii = masker.inverse_transform(pop_accs).to_filename("accs.nii") # transform as nii and save
+
 # Keep this for the LogReg stalking
 probas_staking = np.array(probas_staking)
+
+##########################
+### STAKING MODELING  ####
+##########################
 
 # running the logreg staking
 accs_stalking = []
@@ -263,16 +273,41 @@ std_stalking = np.std(accs_stalking)
 print("acc mean = {}, std = {}".format(mean_stalking, std_stalking))
 
 
+##########################
+### DOUBLE CHECKING  #####
+##########################
 
+# compare highest weights of stalking logreg with the accuracy that a ROI obtained
+for ind, coef in enumerate(clf.coef_[0]):
+	if coef > 0.6:
+		print("*****")
+		print("The ROI: ", atlas.labels[ind])
+		print("obtained an accuracy of ", roi_pred_accs[ind])
+		print("and a weight of ", coef)
+		print("poba obtained and real output:")
+		print(probas_staking[ind][40:50])
+		print(Y[40:50])
+		
+# running the logreg staking with permutated Y
+accs_stalking = []
+X = probas_staking.T # Shape (86, 100)
+clf = LogisticRegression()
+kf = KFold(n_splits=5, shuffle=False, random_state=0)
+kf.get_n_splits(X)
+for i in range(100):
+	perm_rs = np.random.RandomState(i)
+	Y_perm = perm_rs.permutation(Y.copy())
+	for train_index, test_index in kf.split(X):
+		X_train, X_test = X[train_index], X[test_index]
+		y_train, y_test = Y_perm[train_index], Y_perm[test_index]
 
-
-# niftiing the results
-pop_proba_hetero = np.array([roi_pred_proba_hetero]*121) # set as fake 4D for nii transform
-pop_accs = np.array([roi_pred_accs]*121) # set as fake 4D for nii transform
-proba_nii = masker.inverse_transform(pop_proba_hetero).to_filename("proba.nii") # transform as nii and save
-accs_nii = masker.inverse_transform(pop_accs).to_filename("accs.nii") # transform as nii and save
-
-
-
+		clf.fit(X_train, y_train)
+		y_pred = clf.predict(X_test)
+		print(y_train, y_test, y_pred)
+		acc = (y_pred == y_test).mean()
+		accs_stalking.append(acc)
+mean_stalking = np.mean(accs_stalking)
+std_stalking = np.std(accs_stalking)
+print("acc mean = {}, std = {}".format(mean_stalking, std_stalking))
 
 
