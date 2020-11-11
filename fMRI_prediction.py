@@ -222,7 +222,7 @@ for ROI in range(100):
 	# starting the modelisation
 	#run the CV 5 fold logistic regression as many times as we got brain regions
 	clf = LogisticRegression()
-	kf = KFold(n_splits=5, shuffle=False, random_state=ROI)
+	kf = KFold(n_splits=5, shuffle=False, random_state=0)
 	kf.get_n_splits(X)
 
 	# need this for the LogReg stalking
