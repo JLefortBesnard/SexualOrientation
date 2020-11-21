@@ -471,5 +471,5 @@ for i, roi in enumerate(atlas.labels):
 fMRI_Results = np.array([significant_weights]*121) # set as fake 4D for nii transform
 fMRI_Results_nii = masker.inverse_transform(fMRI_Results)
 fMRI_Results_nii3D = image.index_img(fMRI_Results_nii, 0)
-fMRI_Results_nii3D.to_filename('significantROI_deconfounded_fmri.nii')
+fMRI_Results_nii3D.to_filename('significantROIs_fmri.nii')
 
