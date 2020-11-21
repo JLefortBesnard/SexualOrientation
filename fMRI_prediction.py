@@ -196,7 +196,21 @@ FS = FS.reshape((100,86,99)) # for the analysis each ROI at a turn
 np.save("Data_ready", FS)
 # shape (86, 100, 99)
 
+#############
+# LOAD DATA #
+#############
+
 FS = np.load("Data_ready.npy")
+
+print("Masking")
+# define masker
+atlas = ds.fetch_atlas_schaefer_2018(n_rois=100, yeo_networks=7, resolution_mm=2, data_dir=None, base_url=None, resume=True, verbose=1)
+first_nii = nib.load(df.fMRI_path.values[0])
+cur_ratlas_nii = resample_img(
+    	atlas.maps, target_affine=first_nii.affine, interpolation='nearest')
+masker = NiftiLabelsMasker(labels_img=cur_ratlas_nii, standardize=False) # standardization done later in the loop
+masker.fit()
+masker.transform(df.fMRI_path.values[0])
 
 ############################
 ### ROI WISE MODELING  #####
@@ -386,4 +400,76 @@ plt.show()
 # std_stalking = np.std(accs_stalking)
 # print("acc mean = {}, std = {}".format(mean_stalking, std_stalking))
 
+
+##############################################
+####### Non-parameric hypothesis test ########
+##############################################
+
+
+# Non-parameric hypothesis test 
+# run the CV 5 fold logistic regression with permutated Y
+X = probas_staking.T # Shape (86, 100)
+n_permutations = 100
+perm_rs = np.random.RandomState(0)
+permutation_accs = []
+permutation_coefs = []
+for i_iter in range(n_permutations):
+	print(i_iter + 1)
+	Y_perm = perm_rs.permutation(Y)
+	clf = LogisticRegression()
+	kf = KFold(n_splits=5, shuffle=False, random_state=i_iter)
+	kf.get_n_splits(X)
+	for train_index, test_index in kf.split(X):
+		X_train, X_test = X[train_index], X[test_index]
+		y_train, y_test = Y_perm[train_index], Y_perm[test_index]
+		clf.fit(X_train, y_train)
+		y_pred = clf.predict(X_test)
+		acc = (y_pred == y_test).mean()
+		permutation_accs.append(acc)
+		permutation_coefs.append(clf.coef_[0, :])
+
+# extract permutation weigth per ROI for hypothesis testing
+weight_per_roi = []
+for n_perm in range(100):
+	weight_roi = []
+	for ROI in permutation_coefs:
+		weight_roi.append(ROI[n_perm])
+	weight_per_roi.append(weight_roi)
+
+# extract 95 and 5% percentile and check if original weight outside these limits to check for significance
+pvals = []
+for n_roi in range(100):
+	ROI_weights = weight_per_roi[n_roi] 
+	above = stats.scoreatpercentile(ROI_weights, 95)
+	below = stats.scoreatpercentile(ROI_weights, 5)
+	if Weight_results[n_roi] < below or Weight_results[n_roi] > above:
+		pvals.append(1)
+	else:
+		pvals.append(0)
+
+pvals = np.array(pvals)
+print('{} ROIs are significant at p<0.05'.format(np.sum(pvals > 0)))
+
+
+# get significant ROI name + significant weights
+significant_weights = []
+dic = {}
+for i, roi in enumerate(atlas.labels):
+	if pvals[i] == 1:
+		significant_weights.append(Weight_results[i])
+		print(roi, Weight_results[i])
+		dic[roi] = Weight_results[i]
+	else:
+		significant_weights.append(0)
+
+
+################################
+#### Brain visualisation #######
+################################
+
+# extract significant results to nii for visualisation
+fMRI_Results = np.array([significant_weights]*121) # set as fake 4D for nii transform
+fMRI_Results_nii = masker.inverse_transform(fMRI_Results)
+fMRI_Results_nii3D = image.index_img(fMRI_Results_nii, 0)
+fMRI_Results_nii3D.to_filename('significantROI_deconfounded_fmri.nii')
 
