@@ -1,3 +1,10 @@
+"""
+fMRI prediction of sexual orientation
+2020
+Author:   
+        Jeremy Lefort-Besnard   jlefortbesnard (at) tuta (dot) io
+"""
+
 import glob
 import numpy as np
 from nilearn.input_data import NiftiLabelsMasker
