@@ -5,20 +5,23 @@ Author:
         Jeremy Lefort-Besnard   jlefortbesnard (at) tuta (dot) io
 """
 
+import pandas as pd #v1.1.3
+import numpy as np #v1.19.2
 import glob
-import numpy as np
-from nilearn.input_data import NiftiLabelsMasker
+import nibabel as nib #v3.2.1
+import nilearn.datasets as ds #nilearn v0.7.1
 from nilearn.image import resample_img
-from nilearn import image
-import nilearn.datasets as ds
-import nibabel as nib
-import pandas as pd
-from sklearn.preprocessing import StandardScaler
+from nilearn.input_data import NiftiLabelsMasker
+from sklearn.preprocessing import StandardScaler #sklearn v0.23.2
 from nilearn.signal import clean
 from sklearn.linear_model import LogisticRegression
+from scipy import stats #v1.5.2
+from matplotlib import pylab as plt #matplotlib v3.3.2
+from sklearn.metrics import confusion_matrix
+import itertools
 from sklearn.model_selection import KFold
-from scipy import stats
-from matplotlib import pylab as plt
+from nilearn import image
+
 
 
 np.random.seed(0)
@@ -30,7 +33,7 @@ np.random.seed(0)
 
 print("Extracting demographic data")
 # read excel doc as df
-df = pd.read_excel("DATA_IZKF_Version.xlsx")
+df = pd.read_excel("C:\\sexualorientproject\\DATA_IZKF_Version.xlsx")
 df = df.set_index('No.')
 # drop index 87 as we don't have MRI data
 df = df.drop([87])
@@ -42,16 +45,23 @@ Y[Y == 2] = 0
 # 41 homo, 45 hetero in total
 Y = Y.values # df to array
 # add path to functional imgs in df
-df["fMRI_path"] = ['Function/filtered_func_data_warped_{}.nii.gz'.format(i) for i in df.index]
+df["fMRI_path"] = ['C:\\sexualorientproject\\RS\\filtered_func_data_warped_{}.nii.gz'.format(i) for i in df.index]
 
 
 ################################
 ##### Functions needed later ###
 ################################
 
-# function to extract correlation matrix results per ROI
-# return the values per ROI (must be squared matrix)
 def extract_ROIconn(matrix):
+	''' Extract connectivity of each entry of a matrix with the others, without the 
+	connectivity with itself. 
+	Return output as an array shape (p, p-1)
+
+	Parameters
+	----------
+	matrix : must be a squared matrix (p*p)
+	
+	'''
 	output_col = []
 	for column in range(len(matrix)-1):
 		output_col.append(matrix.T[column][column+1:])
@@ -70,9 +80,17 @@ def extract_ROIconn(matrix):
 	return np.array(output)
 
 
-# function to substract TS of t + 1
 def subtract(TS):
-	TS_ = np.zeros((121, 6)) 
+	''' Substract TS(t+1) with TS[t]
+	return the result as an array
+
+	Parameters
+	----------
+	TS : MC parameter for one subject, must be of shape (121, 6)
+	6 parameters for 121 time series
+	
+	'''
+	TS_ = np.zeros((121, 6)).astype(TS.dtype)
 	for i in range(121):
 		if i == 120:
 			TS_[i] = TS[i] # last columns has no t+1 so same ts
@@ -101,7 +119,7 @@ def rotateTickLabels(ax, rotation, which, rotation_mode='anchor', ha='left'):
 print("Extracting motion parameter data")
 # Extract motion parameters from .PAR 
 # save it as .xlsx doc
-MP_paths = glob.glob('MP/*.par')
+MP_paths = glob.glob('C:\\sexualorientproject\\MC_Parameter\\*.par')
 for MP in MP_paths:
 	df_mp1 = pd.DataFrame(columns=[1, 2, 3, 4, 5, 6], 
 						index=np.arange(121)) 
@@ -114,7 +132,7 @@ for MP in MP_paths:
 			if split != '':
 				df_mp1.iloc[row][ind] = np.float(split)
 				ind += 1
-	df_mp1.to_excel("MP/first/{}.xlsx".format(MP[3:-4]))
+	df_mp1.to_excel("C:\\sexualorientproject\\MC_Parameter\\first\\{}.xlsx".format(MP[36:-4]))
 
 
 
@@ -125,7 +143,7 @@ for MP in MP_paths:
 	
 print("Computing substracting and squaring of motion parameter")
 # add 6  columns for subtract at t+1 and add 12 columns for squared values
-MP_paths = glob.glob('MP/first/*.xlsx')
+MP_paths = glob.glob('C:\\sexualorientproject\\MC_Parameter\\first\\*.xlsx')
 for MP in MP_paths:
 	df_mp1 = pd.read_excel(MP)
 	TS = df_mp1[df_mp1.columns[1:]].values
@@ -146,7 +164,7 @@ for MP in MP_paths:
 	df_mp1 = pd.DataFrame(columns=np.arange(24), 
 					data=datum)
 	# df shape (121, 24) 
-	df_mp1.to_excel("MP/second/{}.xlsx".format(MP[9:-5]))
+	df_mp1.to_excel("C:\\sexualorientproject\\MC_Parameter\\second\\{}".format(MP[42:]))
 
 
 ###########################
@@ -184,14 +202,14 @@ for i_nii, nii_path in enumerate(df.fMRI_path.values):
 	# shape (121, 100)
 	# deconfounding
 	# upload df with motion parameter values
-	confounds = pd.read_excel('MP/second/prefiltered_func_data_mcf_{}.xlsx'.format(i_nii+1))
+	confounds = pd.read_excel('C:\\sexualorientproject\\MC_Parameter\\second\\prefiltered_func_data_mcf_{}.xlsx'.format(i_nii+1))
 	confounds = confounds[confounds.columns[1:]].values
 	assert confounds.shape == (121, 24)
 	# deconfounding
 	cur_FS = clean(signals=cur_FS, confounds=confounds, detrend=False)
 	# shape (121, 100)
 	# compute cross correlation
-	sub_cross_corr = np.corrcoef(cur_FS.T)
+	sub_cross_corr = np.corrcoef(cur_FS.T) # pearson correlation
 	# shape (100, 100)
   	# extract results per ROI
 	sub_cross_corr_per_ROI = extract_ROIconn(sub_cross_corr)
@@ -200,14 +218,14 @@ for i_nii, nii_path in enumerate(df.fMRI_path.values):
 FS = np.array(FS)
 FS = np.nan_to_num(FS) # 2 subjects with a few nan (3 and 4, both hetero)
 FS = FS.reshape((100,86,99)) # for the analysis each ROI at a turn
-np.save("Data_ready", FS)
+np.save("C:\\sexualorientproject\\Data_ready", FS)
 # shape (86, 100, 99)
 
 #############
 # LOAD DATA #
 #############
 
-FS = np.load("Data_ready.npy")
+FS = np.load("C:\\sexualorientproject\\Data_ready.npy")
 
 print("Masking")
 # define masker
@@ -230,6 +248,7 @@ roi_pred_proba = []
 
 # need this for the LogReg stalking
 probas_staking = []
+test_set_indexes = []
 
 for ROI in range(100):
 	print("*******")
@@ -250,6 +269,7 @@ for ROI in range(100):
 	probs = np.array([])
 
 	for train_index, test_index in kf.split(X):
+		test_set_indexes.append(test_index)
 		X_train, X_test = X[train_index], X[test_index]
 		y_train, y_test = Y[train_index], Y[test_index]
 		# LogReg ROI wise
@@ -306,7 +326,9 @@ X = probas_staking.T # Shape (86, 100)
 clf = LogisticRegression()
 kf = KFold(n_splits=5, shuffle=False, random_state=0)
 kf.get_n_splits(X)
+test_indexes_2 = []
 for train_index, test_index in kf.split(X):
+	test_indexes_2.append(test_index)
 	X_train, X_test = X[train_index], X[test_index]
 	y_train, y_test = Y[train_index], Y[test_index]
 	clf.fit(X_train, y_train)
@@ -320,6 +342,7 @@ mean_stalking = np.mean(accs_stalking)
 std_stalking = np.std(accs_stalking)
 print("acc mean = {}, std = {}".format(mean_stalking, std_stalking))
 coef_staking_mean = np.mean(coef_staking, axis=0).reshape(100,)
+Weight_results = coef_staking_mean # store for hypothesis testing below
 coef_staking_std = np.std(coef_staking, axis=0).reshape(100,)
 
 # niftiing the staking results

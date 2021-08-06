@@ -4,20 +4,22 @@ MRI prediction of sexual orientation
 Author:   
         Jeremy Lefort-Besnard   jlefortbesnard (at) tuta (dot) io
 """
+
+import pandas as pd #v1.1.3
+import numpy as np #v1.19.2
 import glob
-import numpy as np
-import pandas as pd
-import nibabel as nib
-import nilearn.datasets as ds
+import nibabel as nib #v3.2.1
+import nilearn.datasets as ds #nilearn v0.7.1
 from nilearn.image import resample_img
 from nilearn.input_data import NiftiLabelsMasker
-from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import StandardScaler #sklearn v0.23.2
+from nilearn.signal import clean
 from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import StratifiedShuffleSplit
-from scipy import stats
-from matplotlib import pylab as plt
-from nilearn.signal import clean
-
+from scipy import stats #v1.5.2
+from matplotlib import pylab as plt #matplotlib v3.3.2
+from sklearn.metrics import confusion_matrix
+import itertools
 
 np.random.seed(0)
 
@@ -28,10 +30,10 @@ np.random.seed(0)
 ######################################
 
 # gather all structural imgs
-sMRI_paths = glob.glob('Anatomy/*.nii.gz')
+sMRI_paths = glob.glob('C:\\sexualorientproject\\Anatomy\\*.nii.gz')
 
 # read excel doc as df
-df = pd.read_excel("DATA_IZKF_Version.xlsx")
+df = pd.read_excel("C:\\sexualorientproject\\DATA_IZKF_Version.xlsx")
 df = df.set_index('No.')
 # drop index 87 as we don't have MRI data
 df = df.drop([87])
@@ -46,7 +48,7 @@ Y = Y.values # df to array
 
 
 # add path to structural imgs in df
-df["MRI_path"] = ['Anatomy/highres2standard_{}.nii.gz'.format(i) for i in df.index]
+df["MRI_path"] = ['C:\\sexualorientproject\\Anatomy\\highres2standard_{}.nii.gz'.format(i) for i in df.index]
 
 
 
@@ -75,10 +77,13 @@ for i_nii, nii_path in enumerate(df["MRI_path"].values):
   cur_FS = masker.transform(nii_fake4D)
   FS.append(cur_FS)
 FS = np.array(FS).squeeze()
+assert np.isnan(FS).sum() == 0
+assert np.logical_not(np.any(FS==0))
 assert len(df["MRI_path"].values) == len(FS)
 
 FS_ss = StandardScaler().fit_transform(FS)
 assert np.logical_not(np.any(np.isnan(FS_ss)))
+assert np.logical_not(np.any(FS_ss==0))
 
 
 X_brain = FS_ss
@@ -151,8 +156,6 @@ def rotateTickLabels(ax, rotation, which, rotation_mode='anchor', ha='left'):
             t.set_rotation(rotation)
             t.set_rotation_mode(rotation_mode)
 
-from sklearn.metrics import confusion_matrix
-import itertools
 
 f, ax = plt.subplots(figsize=(8, 8))
 class_names = ["Homosexual", "Heterosexual"]

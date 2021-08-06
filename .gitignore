@@ -1,0 +1,12 @@
+
+accs3D.nii
+coef_staking3D.nii
+coef_staking_std3D.nii
+confusion_matrix_fmri_staking.png
+proba3D.nii
+significantROIs_fmri.nii
+sMRI_results/confusion_matrix_deconfounded.png
+sMRI_results/MRIcoef_deconfounded.nii
+sMRI_results/MRIcoef_std_deconfounded.nii
+sMRI_results/requirements.txt
+sMRI_results/significantROI_deconfounded.nii
