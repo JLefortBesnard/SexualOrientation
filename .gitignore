@@ -20,3 +20,9 @@ fMRI_results/final_coefficients_std.txt
 fMRI_results/final_coefficients_std3D.nii
 fMRI_results/FS_ss.npy
 fMRI_results/signrois.PNG
+sMRI_results/confusion_matrix_mri.png
+sMRI_results/final_coefficients3D_mri.nii
+sMRI_results/final_coefficients_mri.txt
+sMRI_results/final_coefficients_mri_std.txt
+sMRI_results/final_coefficients_std3D_mri.nii
+sMRI_results/significantROIs_mri.nii

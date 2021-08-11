@@ -1,6 +1,6 @@
 """
 fMRI prediction of sexual orientation
-2020
+2021
 Author:   
         Jeremy Lefort-Besnard   jlefortbesnard (at) tuta (dot) io
 """
@@ -28,7 +28,6 @@ np.random.seed(0)
 ######################################
 ##### EXTRACTING DEMOGRAPHIC DATA ####
 ######################################
-
 
 print("Extracting demographic data")
 # read excel doc as df
@@ -207,9 +206,9 @@ for i_nii, nii_path in enumerate(df.fMRI_path.values):
 	# shape (121, 100)
 	FS.append(cur_FS)
 
-np.save("C:\\sexualorientproject\\FS_ss", FS)
+np.save("C:\\sexualorientproject\\fmri_FS_ss", FS)
 
-print("Remove variance explained by ROI time series extraction")
+print("Remove variance explained by confounds in ROI time series extraction")
 # extract confound information
 confounds = [
 	"Biological Sex",
