@@ -141,8 +141,11 @@ for i_subsample in range(100):
 acc = np.mean(sample_accs)
 acc_std = np.std(sample_accs)
 
-# print results
+# print and save accuracy as txt
 print("acc mean = {}, std = {}".format(acc, acc_std))
+text_file = open("final_acc_mri.txt", "w")
+n = text_file.write("acc mean = {}, std = {}".format(acc, acc_std))
+text_file.close()
 
 final_coefficients = np.mean(sample_coefs, axis=0)
 final_coefficients_std = np.std(sample_coefs, axis=0)
@@ -219,7 +222,7 @@ for i, j in itertools.product(range(cm.shape[0]), range(cm.shape[1])):
 plt.xlabel('Predicted label', fontsize=15)
 plt.ylabel("True label", fontsize=15)
 plt.tight_layout()
-plt.savefig('confusion_matrix_mri.png', PNG=300)
+plt.savefig('confusion_matrix_mri.png')
 plt.show()
 
 

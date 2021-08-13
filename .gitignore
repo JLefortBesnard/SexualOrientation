@@ -46,3 +46,11 @@ temp_fmri/final_coefficients3D.nii
 temp_fmri/final_coefficients_std.txt
 temp_fmri/final_coefficients_std3D.nii
 temp_fmri/fmri_sign_rois.PNG
+fMRI_results/accs_per_roi_level0.xlsx
+fMRI_results/accs_std_level0_3D.nii
+fMRI_results/coef_per_roi_fmri.xlsx
+fMRI_results/final_acc_fmri.txt
+fMRI_results/fmri_sign_rois.PNG
+sMRI_results/coef_per_roi_mri.xlsx
+sMRI_results/final_acc_mri.txt
+sMRI_results/significantRois.PNG

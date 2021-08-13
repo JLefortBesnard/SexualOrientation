@@ -419,8 +419,11 @@ print(testSetIdx_level_0[j+i], testSetIdx_level_1[j])
 acc_level_1 = np.mean(accs_level_1)
 acc_std_level_1 = np.std(accs_level_1)
 
-# print results
+# print and save accuracy as txt
 print("acc mean = {}, std = {}".format(acc_level_1, acc_std_level_1))
+text_file = open("final_acc_fmri.txt", "w")
+n = text_file.write("acc mean = {}, std = {}".format(acc_level_1, acc_std_level_1))
+text_file.close()
 
 final_coefficients = np.mean(output_level_1, axis=0).reshape(100,)
 final_coefficients_std = np.std(output_level_1, axis=0).reshape(100,)
