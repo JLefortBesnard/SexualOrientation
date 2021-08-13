@@ -152,15 +152,11 @@ all_y_pred_ = np.squeeze(np.array(all_y_pred).reshape(1,4500))
 all_y_true_ = np.squeeze(np.array(all_y_true).reshape(1,4500)) 
 
 
-# save it as txt to check when rerun the script #reproducibility
-file = open("final_coefficients_mri.txt", "w+")
-content = str(final_coefficients)
-file.write(content)
-file.close()
-file = open("final_coefficients_mri_std.txt", "w+")
-content = str(final_coefficients_std)
-file.write(content)
-file.close()
+# save results as csv to check when rerun the script #reproducibility
+coefs_to_save = np.array([final_coefficients, final_coefficients_std]).T
+df_coef_per_roi_mri = pd.DataFrame(data=coefs_to_save, columns=["Coef", "Coef_std"], index=atlas.labels)
+df_coef_per_roi_mri.to_excel("coef_per_roi_mri.xlsx")
+
 
 # niftiing the MRI results
 final_coefficients_nii3D = masker.inverse_transform(final_coefficients.reshape(1, 100))
@@ -174,18 +170,26 @@ final_coefficients_std_nii3D.to_filename("final_coefficients_std3D_mri.nii") # t
 #### CONFUSION MATRIX ##########
 ################################
 
-# Plotting function for the x axis to be centered
 def rotateTickLabels(ax, rotation, which, rotation_mode='anchor', ha='left'):
-    axes = []
-    if which in ['x', 'both']:
-        axes.append(ax.xaxis)
-    elif which in ['y', 'both']:
-        axes.append(ax.yaxis)
-    for axis in axes:
-        for t in axis.get_ticklabels():
-            t.set_horizontalalignment(ha)
-            t.set_rotation(rotation)
-            t.set_rotation_mode(rotation_mode)
+	''' Plotting function for the x axis labels to be centered
+	with the plot ticks
+
+	Parameters
+	----------
+	See stackoverflow 
+	https://stackoverflow.com/questions/27349341/how-to-display-the-x-axis-labels-in-seaborn-data-visualisation-library-on-a-vert
+	
+	'''
+	axes = []
+	if which in ['x', 'both']:
+		axes.append(ax.xaxis)
+	elif which in ['y', 'both']:
+		axes.append(ax.yaxis)
+	for axis in axes:
+		for t in axis.get_ticklabels():
+			t.set_horizontalalignment(ha)
+			t.set_rotation(rotation)
+			t.set_rotation_mode(rotation_mode)
 
 
 # compute and plot the confusion matrix

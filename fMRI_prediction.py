@@ -108,16 +108,17 @@ def rotateTickLabels(ax, rotation, which, rotation_mode='anchor', ha='left'):
 	https://stackoverflow.com/questions/27349341/how-to-display-the-x-axis-labels-in-seaborn-data-visualisation-library-on-a-vert
 	
 	'''
-    axes = []
-    if which in ['x', 'both']:
-        axes.append(ax.xaxis)
-    elif which in ['y', 'both']:
-        axes.append(ax.yaxis)
-    for axis in axes:
-        for t in axis.get_ticklabels():
-            t.set_horizontalalignment(ha)
-            t.set_rotation(rotation)
-            t.set_rotation_mode(rotation_mode)
+	axes = []
+	if which in ['x', 'both']:
+		axes.append(ax.xaxis)
+	elif which in ['y', 'both']:
+		axes.append(ax.yaxis)
+	for axis in axes:
+		for t in axis.get_ticklabels():
+			t.set_horizontalalignment(ha)
+			t.set_rotation(rotation)
+			t.set_rotation_mode(rotation_mode)
+
 
 
 ###########################################################
@@ -339,11 +340,25 @@ for ROI in range(100):
 accs_level_0 = np.array(accs_level_0)
 accs_std_level_0 = np.array(accs_std_level_0)
 
-# niftiing the results
+# niftiing the accuracies results
 level0_accs4D = np.array([accs_level_0]*121) # set as fake 4D for nii transform
 accs_level0_nii4D = masker.inverse_transform(level0_accs4D)
 accs_level0_nii3D = image.index_img(accs_level0_nii4D, 0)
 accs_level0_nii3D.to_filename("accs_level0_3D.nii") # transform as nii and save
+# niftiing the accuracies stand deviation results
+level0_accs_std4D = np.array([accs_std_level_0]*121) # set as fake 4D for nii transform
+accs_std_level0_nii4D = masker.inverse_transform(level0_accs_std4D)
+accs_std_level0_nii3D = image.index_img(accs_std_level0_nii4D, 0)
+accs_std_level0_nii3D.to_filename("accs_std_level0_3D.nii") # transform as nii and save
+
+
+# save results as csv to check when rerun the script #reproducibility
+coefs_to_save = np.array([accs_level_0, accs_std_level_0]).T
+df_accs_per_roi_level0 = pd.DataFrame(data=coefs_to_save, columns=["Accs_level0", "Accs_level0_std"], index=atlas.labels)
+df_accs_per_roi_level0.to_excel("accs_per_roi_level0.xlsx")
+
+
+
 # save to double check when reran that we obtain same results
 np.save("C:\\sexualorientproject\\output_level_0", output_level_0)
 
@@ -397,6 +412,8 @@ for train_index, test_index in kf.split(X):
 for i in range(0, 100, 5):
 	for j in range(5):
 		assert (testSetIdx_level_0[j+i] != testSetIdx_level_1[j]).sum() == 0
+print(testSetIdx_level_0[j+i], testSetIdx_level_1[j])
+
 
 # compute mean accuracy and standard deviation for the level 1 final model
 acc_level_1 = np.mean(accs_level_1)
@@ -407,18 +424,6 @@ print("acc mean = {}, std = {}".format(acc_level_1, acc_std_level_1))
 
 final_coefficients = np.mean(output_level_1, axis=0).reshape(100,)
 final_coefficients_std = np.std(output_level_1, axis=0).reshape(100,)
-
-# save it as txt to check when rerun the script #reproducibility
-file = open("final_coefficients.txt", "w+")
-content = str(final_coefficients)
-file.write(content)
-file.close()
-file = open("final_coefficients_std.txt", "w+")
-content = str(final_coefficients_std)
-file.write(content)
-file.close()
-
-
 
 # niftiing the staking results
 final_coefficients4D = np.array([final_coefficients]*121) # set as fake 4D for nii transform
@@ -431,6 +436,10 @@ final_coefficients_std_nii4D = masker.inverse_transform(final_coefficients_std4D
 final_coefficients_std_nii3D = image.index_img(final_coefficients_std_nii4D, 0)
 final_coefficients_std_nii3D.to_filename("final_coefficients_std3D.nii") # transform as nii and save
 
+# save results as csv to check when rerun the script #reproducibility
+coefs_to_save = np.array([final_coefficients, final_coefficients_std]).T
+df_coef_per_roi_fmri = pd.DataFrame(data=coefs_to_save, columns=["Coef", "Coef_std"], index=atlas.labels)
+df_coef_per_roi_fmri.to_excel("coef_per_roi_fmri.xlsx")
 
 
 ################################
@@ -470,41 +479,6 @@ plt.tight_layout()
 plt.savefig('confusion_matrix_fmri.png', PNG=300)
 plt.show()
 
-
-# ##########################
-# ### DOUBLE CHECKING  #####
-# ##########################
-
-# # compare highest weights of stalking logreg with the accuracy that a ROI obtained
-# for ind, coef in enumerate(clf.coef_[0]):
-# 	if coef > 0.6:
-# 		print("*****")
-# 		print("ROI name: ", atlas.labels[ind])
-# 		print("acc: ", roi_pred_accs[ind], " weight: ", coef)
-# 		print("poba obtained and real output:")
-# 		print(probas_staking[ind][40:50])
-# 		print(Y[40:50])
-		
-# # running the logreg staking with permutated Y
-# accs_stalking = []
-# X = probas_staking.T # Shape (86, 100)
-# clf = LogisticRegression()
-# kf = KFold(n_splits=5, shuffle=False, random_state=0)
-# kf.get_n_splits(X)
-# for i in range(100):
-# 	perm_rs = np.random.RandomState(i)
-# 	Y_perm = perm_rs.permutation(Y.copy())
-# 	for train_index, test_index in kf.split(X):
-# 		X_train, X_test = X[train_index], X[test_index]
-# 		y_train, y_test = Y_perm[train_index], Y_perm[test_index]
-# 		clf.fit(X_train, y_train)
-# 		y_pred = clf.predict(X_test)
-# 		print(y_train, y_test, y_pred)
-# 		acc = (y_pred == y_test).mean()
-# 		accs_stalking.append(acc)
-# mean_stalking = np.mean(accs_stalking)
-# std_stalking = np.std(accs_stalking)
-# print("acc mean = {}, std = {}".format(mean_stalking, std_stalking))
 
 
 ##############################################
@@ -580,3 +554,9 @@ significant_weights_4D = np.array([significant_weights]*121) # set as fake 4D fo
 significant_weights_4D_nii = masker.inverse_transform(significant_weights_4D)
 significant_weights_nii3D = image.index_img(significant_weights_4D_nii, 0)
 significant_weights_nii3D.to_filename('significantROIs_fmri.nii')
+
+
+
+
+
+
