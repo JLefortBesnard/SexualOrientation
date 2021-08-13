@@ -219,9 +219,7 @@ confounds = [
 my_confound = df[confounds].values
 
 # actual signal deconfounding 
-FS = np.array(FS).reshape(86, 121*100) # needs to be 2D to be cleaned
-FS = clean(signals=FS, confounds=my_confound, detrend=False, standardize=False)
-FS = FS.reshape(86, 100, 121)
+FS = np.array(FS).reshape(86, 100, 121)
 
 # compute the correlation matrix subject wise, and extract the correlation per ROI
 corrs = []
@@ -233,11 +231,19 @@ for ind, cur_FS in enumerate(FS):
 	sub_cross_corr_per_ROI = extract_ROIconn(sub_cross_corr) # shape 100, 99
 	corrs.append(sub_cross_corr_per_ROI) # shape 86 times 100, 99 at the end of the loop
 
+
 corrs = np.array(corrs)
+np.save("C:\\sexualorientproject\\corrs", corrs) #shape 86, 100, 99
+
+corrs2D = corrs.reshape(86, 100*99) # needs to be 2D to be cleaned
+corrs_cleaned = clean(signals=corrs2D, confounds=my_confound, detrend=False, standardize=False)
+corrs_cleaned = corrs_cleaned.reshape(86, 100, 99)
+np.save("C:\\sexualorientproject\\corrs_cleaned", corrs_cleaned)
+
 assert np.isnan(corrs).sum() == 0
-corrs = corrs.reshape((100,86,99)) # for the analysis each ROI at a turn
-np.save("C:\\sexualorientproject\\corrs", corrs)
-# shape (100, 86, 99)
+assert np.isnan(corrs_cleaned).sum() == 0
+
+
 
 
 
@@ -265,7 +271,9 @@ masker.transform(df.fMRI_path.values[0])
 # the output is a probability of predicting an hetero per ROI (n=100) per subject (n=86)
 
 # input level 0 shape = 100*86*99
-corrs = np.load("C:\\sexualorientproject\\corrs.npy")
+corrs = np.load("C:\\sexualorientproject\\corrs_cleaned.npy")
+corrs = corrs_cleaned.reshape((100,86,99)) # for the analysis each ROI at a turn
+# shape (100, 86, 99)
 
 # save accuracies to check model fit quality
 accs_level_0 = []

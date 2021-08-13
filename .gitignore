@@ -26,3 +26,7 @@ sMRI_results/final_coefficients_mri.txt
 sMRI_results/final_coefficients_mri_std.txt
 sMRI_results/final_coefficients_std3D_mri.nii
 sMRI_results/significantROIs_mri.nii
+fMRI_results/corrs.npy~RF70f0e7.TMP
+fMRI_results/FS_ss.npy~RF70f089.TMP
+fMRI_results/output_level_0.npy~RF70f116.TMP
+fMRI_results/signrois_final.PNG
