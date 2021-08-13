@@ -97,8 +97,17 @@ def subtract(TS):
 	return TS_
 
 
-# Plotting function for the x axis to be centered
+
 def rotateTickLabels(ax, rotation, which, rotation_mode='anchor', ha='left'):
+	''' Plotting function for the x axis labels to be centered
+	with the plot ticks
+
+	Parameters
+	----------
+	See stackoverflow 
+	https://stackoverflow.com/questions/27349341/how-to-display-the-x-axis-labels-in-seaborn-data-visualisation-library-on-a-vert
+	
+	'''
     axes = []
     if which in ['x', 'both']:
         axes.append(ax.xaxis)
@@ -109,6 +118,7 @@ def rotateTickLabels(ax, rotation, which, rotation_mode='anchor', ha='left'):
             t.set_horizontalalignment(ha)
             t.set_rotation(rotation)
             t.set_rotation_mode(rotation_mode)
+
 
 ###########################################################
 ##### Preparing confounds (motion parameter) 1:openfile ###
@@ -208,15 +218,6 @@ for i_nii, nii_path in enumerate(df.fMRI_path.values):
 
 np.save("C:\\sexualorientproject\\fmri_FS_ss", FS)
 
-print("Remove variance explained by confounds in ROI time series extraction")
-# extract confound information
-confounds = [
-	"Biological Sex",
-	"Age",
-	"EducationalLevel",
-	"Handedness"
-    	     ]
-my_confound = df[confounds].values
 
 # actual signal deconfounding 
 FS = np.array(FS).reshape(86, 100, 121)
@@ -235,6 +236,16 @@ for ind, cur_FS in enumerate(FS):
 corrs = np.array(corrs)
 np.save("C:\\sexualorientproject\\corrs", corrs) #shape 86, 100, 99
 
+print("Remove variance explained by confounds in correlations")
+# extract confound information
+confounds = [
+	"Biological Sex",
+	"Age",
+	"EducationalLevel",
+	"Handedness"
+    	     ]
+my_confound = df[confounds].values
+
 corrs2D = corrs.reshape(86, 100*99) # needs to be 2D to be cleaned
 corrs_cleaned = clean(signals=corrs2D, confounds=my_confound, detrend=False, standardize=False)
 corrs_cleaned = corrs_cleaned.reshape(86, 100, 99)
@@ -250,7 +261,7 @@ assert np.isnan(corrs_cleaned).sum() == 0
 ########################################
 # LOAD MASKER TO SAVE RESULTS AS NIFTI #
 ########################################
-# usefull if you don't want to run the full extraction again
+# usefull if want to run only the last part of the script (without the (time-consumming) time series extraction)
 
 print("Masking")
 # define masker
@@ -268,18 +279,17 @@ masker.transform(df.fMRI_path.values[0])
 
 # this part fits a model per ROI to predict sexual orientation
 # the input is 99 correlation values per ROI (n=100) for each subject (n=86) 
-# the output is a probability of predicting an hetero per ROI (n=100) per subject (n=86)
+# the output is a probability of predicting a hetero per ROI (n=100) per subject (n=86)
 
 # input level 0 shape = 100*86*99
-corrs = np.load("C:\\sexualorientproject\\corrs_cleaned.npy")
+corrs = np.load("C:\\sexualorientproject\\corrs_cleaned.npy") # shape 86, 100, 99
 corrs = corrs_cleaned.reshape((100,86,99)) # for the analysis each ROI at a turn
-# shape (100, 86, 99)
 
 # save accuracies to check model fit quality
 accs_level_0 = []
 accs_std_level_0 = []
 
-# the probabilities as output of level 0, used as input of level 1 
+# the probabilities as output of level 0, later used as input of level 1 
 output_level_0 = []
 
 # check if contamination of test set during the whole loop
@@ -291,9 +301,9 @@ for ROI in range(100):
 	print(ROI, "/100")
 	print("*******")
 	X = corrs[ROI] # extract correlation of a particular ROI for all subjects, shape X = (86, 99)
+
+	# accuracies per CV fold
 	sample_accs = []
-	sample_std = []
-	sample_proba = []
 
 	# starting the modelisation
 	# run the CV 5 fold logistic regression as many times as we got brain regions (thus 100 times)
@@ -311,15 +321,15 @@ for ROI in range(100):
 		y_train, y_test = Y[train_index], Y[test_index]
 		# LogReg ROI wise
 		clf.fit(X_train, y_train)
-		proba = clf.predict_proba(X_test)
+		proba = clf.predict_proba(X_test) # output kept for level 1
 		y_pred = clf.predict(X_test)
-		acc = (y_pred == y_test).mean()
-		sample_accs.append(acc)
+		acc = (y_pred == y_test).mean() # CV fold accuracy
+		sample_accs.append(acc) # 5 CV folds accuracies
 
 		# Keep the proba of being hetero according to this fit, for the level 1 LogReg stalking
-		probs = np.concatenate((probs, proba[:, 1] ), axis=None)
+		probs = np.concatenate((probs, proba[:, 1] ), axis=None) # kept all test set folds
 	# Keep this for the LogReg stalking
-	output_level_0.append(probs)
+	output_level_0.append(probs) # 86 probas for 100 ROIs
 	# for checking model fit quality
 	accs_level_0.append(np.mean(sample_accs))
 	accs_std_level_0.append(np.std(sample_accs))
@@ -375,19 +385,20 @@ for train_index, test_index in kf.split(X):
 	# LogReg subject wise
 	clf.fit(X_train, y_train)
 	y_pred = clf.predict(X_test)
-	acc = (y_pred == y_test).mean()
-	accs_level_1.append(acc)
+	acc = (y_pred == y_test).mean() # CV fold accuracy
+	accs_level_1.append(acc) # 5 CV folds accuracies
 	# extract results for the confusion matrix
 	all_y_pred = np.concatenate((all_y_pred, y_pred), axis=None)
 	all_y_true = np.concatenate((all_y_true, y_test), axis=None)
 	output_level_1.append(clf.coef_)
 
 # check for leaking
+# test set idx MUST be the same in level 0 and level 1 of the analysis
 for i in range(0, 100, 5):
 	for j in range(5):
 		assert (testSetIdx_level_0[j+i] != testSetIdx_level_1[j]).sum() == 0
 
-# compute mean accuracy and standard deviation
+# compute mean accuracy and standard deviation for the level 1 final model
 acc_level_1 = np.mean(accs_level_1)
 acc_std_level_1 = np.std(accs_level_1)
 
