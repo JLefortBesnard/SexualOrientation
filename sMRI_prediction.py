@@ -211,16 +211,16 @@ for indx, i in enumerate(cm):
 print(cm) # double check
 plt.imshow(cm, vmin=0, vmax=100, interpolation='nearest', cmap=plt.cm.Reds)
 tick_marks = np.arange(len(class_names))
-plt.xticks(tick_marks, class_names, fontsize=12)
-plt.yticks(tick_marks, class_names, fontsize=12)
+plt.xticks(tick_marks, class_names, fontsize=20)
+plt.yticks(tick_marks, class_names, fontsize=20)
 rotateTickLabels(ax, -55, 'x')
 thresh = cm.max() / 2.
 for i, j in itertools.product(range(cm.shape[0]), range(cm.shape[1])):
     plt.text(j, i, format(cm[i, j]) + "%",
              horizontalalignment="center",
-             color= "black", fontsize=15)
-plt.xlabel('Predicted label', fontsize=15)
-plt.ylabel("True label", fontsize=15)
+             color= "black", fontsize=20)
+plt.xlabel('Predicted label', fontsize=20)
+plt.ylabel("True label", fontsize=20)
 plt.tight_layout()
 plt.savefig('confusion_matrix_mri.png')
 plt.show()
@@ -295,3 +295,48 @@ for i, roi in enumerate(atlas.labels):
 significant_weights_3D = masker.inverse_transform(np.array(significant_weights).reshape(1, 100))
 significant_weights_3D.to_filename('significantROIs_mri.nii')
 
+
+# plot heat map of coefficients
+from matplotlib import pylab as plt
+import seaborn as sns
+import pandas as pd
+import numpy as np
+
+df = pd.read_excel("sMRI_results/coef_per_roi_mri.xlsx")
+plt.figure(figsize=(12, 5))
+ax = sns.heatmap(df["Coef"].values.reshape(1, 100), cmap=plt.cm.RdBu_r, cbar_kws={"shrink": 0.25}, 
+			center=0, annot=True, annot_kws={'size': 4}, square=True)
+tick_marks = np.arange(len(df["Unnamed: 0"].values))
+plt.xticks(tick_marks + 0.5, list(df["Unnamed: 0"].values), fontsize=4)
+plt.yticks([0], ["Weights"], fontsize=8, rotation=90)
+ax.xaxis.set_ticks_position('top')
+rotateTickLabels(ax, 45, 'x')
+plt.title('Homosexual vs heterosexual subjects: classification contributions', fontsize=13)
+plt.tight_layout()
+plt.savefig('sMRI_results/coef_mri_heatmap.png', DPI=500)
+plt.show()
+
+
+df = pd.read_excel("sMRI_results/coef_per_roi_mri.xlsx")
+df = df.set_index("Unnamed: 0")
+
+sign_rois = ["b'7Networks_LH_Vis_7'", "b'7Networks_LH_SomMot_4'",
+			"b'7Networks_LH_Default_pCunPCC_2'", "b'7Networks_RH_Vis_2'",
+			"b'7Networks_RH_SomMot_6'", "b'7Networks_RH_SomMot_8'",
+			"b'7Networks_RH_SalVentAttn_TempOccPar_1'",
+			"b'7Networks_RH_Cont_PFCl_4'"]
+
+df = df.loc[sign_rois]
+
+plt.figure(figsize=(8, 5))
+ax = sns.heatmap(df["Coef"].values.reshape(1, -1), linewidths=2, cmap=plt.cm.RdBu_r, cbar_kws={"shrink": 0.25}, 
+			center=0, annot=True, annot_kws={'size': 12}, square=True)
+tick_marks = np.arange(len(df.index))
+plt.xticks(tick_marks + 0.5, sign_rois, fontsize=12)
+plt.yticks([], fontsize=12, rotation=90)
+ax.xaxis.set_ticks_position('top')
+rotateTickLabels(ax, 45, 'x')
+plt.title('Classification contributions of significant ROIs', fontsize=13)
+plt.tight_layout()
+plt.savefig('sMRI_results/coef_mri_heatmap_sign.png', DPI=500)
+plt.show()

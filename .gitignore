@@ -54,3 +54,8 @@ fMRI_results/fmri_sign_rois.PNG
 sMRI_results/coef_per_roi_mri.xlsx
 sMRI_results/final_acc_mri.txt
 sMRI_results/significantRois.PNG
+fMRI_results/fmri_ant.png
+*.png
+*.nii
+*.pptx
+*.pdf
