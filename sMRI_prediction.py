@@ -219,8 +219,8 @@ for i, j in itertools.product(range(cm.shape[0]), range(cm.shape[1])):
     plt.text(j, i, format(cm[i, j]) + "%",
              horizontalalignment="center",
              color= "black", fontsize=20)
-plt.xlabel('Predicted label', fontsize=20)
-plt.ylabel("True label", fontsize=20)
+plt.xlabel('Predicted label', fontsize=25)
+plt.ylabel("True label", fontsize=25)
 plt.tight_layout()
 plt.savefig('confusion_matrix_mri.png')
 plt.show()
@@ -340,3 +340,27 @@ plt.title('Classification contributions of significant ROIs', fontsize=13)
 plt.tight_layout()
 plt.savefig('sMRI_results/coef_mri_heatmap_sign.png', DPI=500)
 plt.show()
+
+# plot roc curve
+from sklearn.metrics import (precision_score,
+                             recall_score,
+                             roc_auc_score,
+                             plot_roc_curve)
+from sklearn.model_selection import train_test_split
+# plot roc curve
+X_train, X_test, y_train, y_test = train_test_split(X_brain, Y, random_state=0, shuffle=True, stratify=Y)
+model = LogisticRegression()
+model.fit(X_train, y_train)
+plot_roc_curve(model, X_test, y_test)
+plt.xlabel('Specificity (FPR)', fontsize=16)
+plt.ylabel("Sensitivity (TPR)", fontsize=16)
+plt.plot([0, 1], [0, 1], color='navy', lw=1, linestyle='--')
+plt.legend(fontsize=14)
+plt.savefig('sMRI_results/sMRI_so_roccurve_.png', PNG=300)
+plt.show() 
+
+# R script
+'''
+plot(x, y = NULL, ..., type = "l",
+    add = FALSE, min = 0, max = 1)
+'''
