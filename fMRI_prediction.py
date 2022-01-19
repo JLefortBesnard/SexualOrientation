@@ -31,7 +31,8 @@ np.random.seed(0)
 
 print("Extracting demographic data")
 # read excel doc as df
-df = pd.read_excel("C:\\sexualorientproject\\DATA_IZKF_Version.xlsx")
+# df = pd.read_excel("C:\\sexualorientproject\\DATA_IZKF_Version.xlsx")
+df = pd.read_excel("DATA_IZKF_Version.xlsx")
 df = df.set_index('No.')
 # drop index 87 as we don't have MRI data for this subject
 df = df.drop([87])
@@ -43,7 +44,8 @@ Y[Y == 2] = 0
 # 41 homo, 45 hetero in total
 Y = Y.values # df to array
 # add path to functional imgs in df
-df["fMRI_path"] = ['C:\\sexualorientproject\\RS\\filtered_func_data_warped_{}.nii.gz'.format(i) for i in df.index]
+# df["fMRI_path"] = ['C:\\sexualorientproject\\RS\\filtered_func_data_warped_{}.nii.gz'.format(i) for i in df.index]
+df["fMRI_path"] = ['filtered_func_data_warped_{}.nii.gz'.format(i) for i in df.index]
 
 
 ################################
@@ -128,7 +130,8 @@ def rotateTickLabels(ax, rotation, which, rotation_mode='anchor', ha='left'):
 print("Extracting motion parameter data")
 # Extract motion parameters from .PAR 
 # save it as .xlsx doc
-MP_paths = glob.glob('C:\\sexualorientproject\\MC_Parameter\\*.par')
+# MP_paths = glob.glob('C:\\sexualorientproject\\MC_Parameter\\*.par')
+MP_paths = glob.glob('*.par')
 for MP in MP_paths:
 	df_mp1 = pd.DataFrame(columns=[1, 2, 3, 4, 5, 6], 
 						index=np.arange(121)) 
@@ -141,7 +144,8 @@ for MP in MP_paths:
 			if split != '':
 				df_mp1.iloc[row][ind] = np.float(split)
 				ind += 1
-	df_mp1.to_excel("C:\\sexualorientproject\\MC_Parameter\\first\\{}.xlsx".format(MP[36:-4]))
+	# df_mp1.to_excel("C:\\sexualorientproject\\MC_Parameter\\first\\{}.xlsx".format(MP[36:-4]))
+	df_mp1.to_excel("{}.xlsx".format(MP[36:-4]))
 
 
 
@@ -152,7 +156,8 @@ for MP in MP_paths:
 	
 print("Computing substracting and squaring of motion parameter")
 # add 6  columns for subtract at t+1 and add 12 columns for squared values
-MP_paths = glob.glob('C:\\sexualorientproject\\MC_Parameter\\first\\*.xlsx')
+# MP_paths = glob.glob('C:\\sexualorientproject\\MC_Parameter\\first\\*.xlsx')
+MP_paths = glob.glob('*.xlsx')
 for MP in MP_paths:
 	df_mp1 = pd.read_excel(MP)
 	TS = df_mp1[df_mp1.columns[1:]].values
@@ -173,7 +178,8 @@ for MP in MP_paths:
 	df_mp1 = pd.DataFrame(columns=np.arange(24), 
 					data=datum)
 	# df shape (121, 24) 
-	df_mp1.to_excel("C:\\sexualorientproject\\MC_Parameter\\second\\{}".format(MP[42:]))
+	# df_mp1.to_excel("C:\\sexualorientproject\\MC_Parameter\\second\\{}".format(MP[42:]))
+	df_mp1.to_excel("{}".format(MP[42:]))
 
 
 ###########################
@@ -209,7 +215,8 @@ for i_nii, nii_path in enumerate(df.fMRI_path.values):
 	# shape (121, 100)
 	# deconfounding
 	# upload df with motion parameter values
-	confounds = pd.read_excel('C:\\sexualorientproject\\MC_Parameter\\second\\prefiltered_func_data_mcf_{}.xlsx'.format(i_nii+1))
+	# confounds = pd.read_excel('C:\\sexualorientproject\\MC_Parameter\\second\\prefiltered_func_data_mcf_{}.xlsx'.format(i_nii+1))
+	confounds = pd.read_excel('prefiltered_func_data_mcf_{}.xlsx'.format(i_nii+1))
 	confounds = confounds[confounds.columns[1:]].values
 	assert confounds.shape == (121, 24)
 	# deconfounding
@@ -217,9 +224,11 @@ for i_nii, nii_path in enumerate(df.fMRI_path.values):
 	# shape (121, 100)
 	FS.append(cur_FS)
 
-np.save("C:\\sexualorientproject\\fmri_FS_ss", FS)
+# np.save("C:\\sexualorientproject\\fmri_FS_ss", FS)
+np.save("fmri_FS_ss", FS)
 
-
+# FS= np.load("C:\\sexualorientproject\\fmri_FS_ss.npy")
+FS= np.load("fmri_FS_ss.npy")
 # actual signal deconfounding 
 FS = np.array(FS).reshape(86, 100, 121)
 
@@ -235,7 +244,8 @@ for ind, cur_FS in enumerate(FS):
 
 
 corrs = np.array(corrs)
-np.save("C:\\sexualorientproject\\corrs", corrs) #shape 86, 100, 99
+# np.save("C:\\sexualorientproject\\corrs", corrs) #shape 86, 100, 99
+np.save("corrs", corrs) #shape 86, 100, 99
 
 print("Remove variance explained by confounds in correlations")
 # extract confound information
@@ -250,7 +260,8 @@ my_confound = df[confounds].values
 corrs2D = corrs.reshape(86, 100*99) # needs to be 2D to be cleaned
 corrs_cleaned = clean(signals=corrs2D, confounds=my_confound, detrend=False, standardize=False)
 corrs_cleaned = corrs_cleaned.reshape(86, 100, 99)
-np.save("C:\\sexualorientproject\\corrs_cleaned", corrs_cleaned)
+# np.save("C:\\sexualorientproject\\corrs_cleaned", corrs_cleaned)
+np.save("corrs_cleaned", corrs_cleaned)
 
 assert np.isnan(corrs).sum() == 0
 assert np.isnan(corrs_cleaned).sum() == 0
@@ -283,7 +294,8 @@ masker.transform(df.fMRI_path.values[0])
 # the output is a probability of predicting a hetero per ROI (n=100) per subject (n=86)
 
 # input level 0 shape = 100*86*99
-corrs = np.load("C:\\sexualorientproject\\corrs_cleaned.npy") # shape 86, 100, 99
+# corrs = np.load("C:\\sexualorientproject\\corrs_cleaned.npy") # shape 86, 100, 99
+corrs = np.load("corrs_cleaned.npy") # shape 86, 100, 99
 corrs = corrs_cleaned.reshape((100,86,99)) # for the analysis each ROI at a turn
 
 # save accuracies to check model fit quality
@@ -360,7 +372,8 @@ df_accs_per_roi_level0.to_excel("accs_per_roi_level0.xlsx")
 
 
 # save to double check when reran that we obtain same results
-np.save("C:\\sexualorientproject\\output_level_0", output_level_0)
+# np.save("C:\\sexualorientproject\\output_level_0", output_level_0)
+np.save("output_level_0", output_level_0)
 
 
 # Keep this for level 1 of the stacking analysis
@@ -566,7 +579,8 @@ import seaborn as sns
 import pandas as pd
 import numpy as np
 
-df = pd.read_excel("fMRI_results/coef_per_roi_fmri.xlsx")
+# df = pd.read_excel("fMRI_results/coef_per_roi_fmri.xlsx")
+df = pd.read_excel("coef_per_roi_fmri.xlsx")
 plt.figure(figsize=(12, 5))
 ax = sns.heatmap(df["Coef"].values.reshape(1, 100), cmap=plt.cm.RdBu_r, cbar_kws={"shrink": 0.25}, 
 			center=0, annot=True, annot_kws={'size': 4}, square=True)
@@ -577,11 +591,13 @@ ax.xaxis.set_ticks_position('top')
 rotateTickLabels(ax, 45, 'x')
 plt.title('Homosexual vs heterosexual subjects: classification contributions', fontsize=13)
 plt.tight_layout()
-plt.savefig('fMRI_results/coef_fmri_heatmap.png', DPI=500)
+# plt.savefig('fMRI_results/coef_fmri_heatmap.png', DPI=500)
+plt.savefig('coef_fmri_heatmap.png', DPI=500)
 plt.show()
 
 
-df = pd.read_excel("fMRI_results/coef_per_roi_fmri.xlsx")
+# df = pd.read_excel("fMRI_results/coef_per_roi_fmri.xlsx")
+df = pd.read_excel("coef_per_roi_fmri.xlsx")
 df = df.set_index("Unnamed: 0")
 
 sign_rois = ["b'7Networks_LH_Limbic_OFC_1'", "b'7Networks_LH_Default_PFC_7'", 
@@ -599,7 +615,8 @@ ax.xaxis.set_ticks_position('top')
 rotateTickLabels(ax, 45, 'x')
 plt.title('Classification contributions of significant ROIs', fontsize=13)
 plt.tight_layout()
-plt.savefig('fMRI_results/coef_fmri_heatmap_sign.png', DPI=500)
+# plt.savefig('fMRI_results/coef_fmri_heatmap_sign.png', DPI=500)
+plt.savefig('coef_fmri_heatmap_sign.png', DPI=500)
 plt.show()
 
 
@@ -619,7 +636,8 @@ plt.xlabel('Specificity (FPR)', fontsize=16)
 plt.ylabel("Sensitivity (TPR)", fontsize=16)
 plt.plot([0, 1], [0, 1], color='navy', lw=1, linestyle='--')
 plt.legend(fontsize=14)
-plt.savefig('fMRI_results/fMRI_so_roccurve_.png', PNG=300)
+# plt.savefig('fMRI_results/fMRI_so_roccurve_.png', PNG=300)
+plt.savefig('fMRI_so_roccurve_.png', PNG=300)
 plt.show() 
 
 

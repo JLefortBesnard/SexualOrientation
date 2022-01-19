@@ -30,7 +30,8 @@ np.random.seed(0)
 
 print("Extracting demographic data")
 # read excel doc as df
-df = pd.read_excel("C:\\sexualorientproject\\DATA_IZKF_Version.xlsx")
+# df = pd.read_excel("C:\\sexualorientproject\\DATA_IZKF_Version.xlsx")
+df = pd.read_excel("DATA_IZKF_Version.xlsx")
 df = df.set_index('No.')
 # drop index 87 as we don't have MRI data for this subject
 df = df.drop([87])
@@ -42,8 +43,8 @@ Y[Y == 2] = 0
 # 41 homo, 45 hetero in total
 Y = Y.values # df to array
 # add path to structural imgs in df
-df["MRI_path"] = ['C:\\sexualorientproject\\Anatomy\\highres2standard_{}.nii.gz'.format(i) for i in df.index]
-
+# df["MRI_path"] = ['C:\\sexualorientproject\\Anatomy\\highres2standard_{}.nii.gz'.format(i) for i in df.index]
+df["MRI_path"] = ['highres2standard_{}.nii.gz'.format(i) for i in df.index]
 
 
 ###########################################
@@ -85,7 +86,8 @@ assert np.logical_not(np.any(FS_ss==0))
 
 # grey matter quantity per ROI for each subject used as input for analysis, shape=(86, 100)
 X_brain = FS_ss
-np.save("C:\\sexualorientproject\\mri_FS_ss", FS)
+# np.save("C:\\sexualorientproject\\mri_FS_ss", FS)
+np.save("mri_FS_ss", FS)
 
 #######################
 ### DECONFOUNDING #####
@@ -302,7 +304,8 @@ import seaborn as sns
 import pandas as pd
 import numpy as np
 
-df = pd.read_excel("sMRI_results/coef_per_roi_mri.xlsx")
+# df = pd.read_excel("sMRI_results/coef_per_roi_mri.xlsx")
+df = pd.read_excel("coef_per_roi_mri.xlsx")
 plt.figure(figsize=(12, 5))
 ax = sns.heatmap(df["Coef"].values.reshape(1, 100), cmap=plt.cm.RdBu_r, cbar_kws={"shrink": 0.25}, 
 			center=0, annot=True, annot_kws={'size': 4}, square=True)
@@ -313,11 +316,13 @@ ax.xaxis.set_ticks_position('top')
 rotateTickLabels(ax, 45, 'x')
 plt.title('Homosexual vs heterosexual subjects: classification contributions', fontsize=13)
 plt.tight_layout()
-plt.savefig('sMRI_results/coef_mri_heatmap.png', DPI=500)
+# plt.savefig('sMRI_results/coef_mri_heatmap.png', DPI=500)
+plt.savefig('coef_mri_heatmap.png', DPI=500)
 plt.show()
 
 
-df = pd.read_excel("sMRI_results/coef_per_roi_mri.xlsx")
+# df = pd.read_excel("sMRI_results/coef_per_roi_mri.xlsx")
+df = pd.read_excel("coef_per_roi_mri.xlsx")
 df = df.set_index("Unnamed: 0")
 
 sign_rois = ["b'7Networks_LH_Vis_7'", "b'7Networks_LH_SomMot_4'",
@@ -338,7 +343,8 @@ ax.xaxis.set_ticks_position('top')
 rotateTickLabels(ax, 45, 'x')
 plt.title('Classification contributions of significant ROIs', fontsize=13)
 plt.tight_layout()
-plt.savefig('sMRI_results/coef_mri_heatmap_sign.png', DPI=500)
+# plt.savefig('sMRI_results/coef_mri_heatmap_sign.png', DPI=500)
+plt.savefig('coef_mri_heatmap_sign.png', DPI=500)
 plt.show()
 
 # plot roc curve
@@ -356,7 +362,8 @@ plt.xlabel('Specificity (FPR)', fontsize=16)
 plt.ylabel("Sensitivity (TPR)", fontsize=16)
 plt.plot([0, 1], [0, 1], color='navy', lw=1, linestyle='--')
 plt.legend(fontsize=14)
-plt.savefig('sMRI_results/sMRI_so_roccurve_.png', PNG=300)
+# plt.savefig('sMRI_results/sMRI_so_roccurve_.png', PNG=300)
+plt.savefig('sMRI_so_roccurve_.png', PNG=300)
 plt.show() 
 
 # R script
